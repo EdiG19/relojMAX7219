@@ -1,58 +1,51 @@
 #include <Arduino.h>
 #include "DisplayMgr.h"
-#include "InputMgr.h" // <--- ¡Nuevo!
+#include "InputMgr.h"
+#include "CronoMgr.h" // <--- ¡Nuevo módulo!
 
 void setup() {
     Serial.begin(115200);
     
-    // Iniciamos Pantallas y Entradas
+    // 1. Inicializar Módulos
     DisplayMgr::init();
     InputMgr::init();
+    CronoMgr::init();
 
-    DisplayMgr::showMenuState("TEST BOTONES", "Presiona uno...");
+    // Mensaje de bienvenida
+    DisplayMgr::showMenuState("MODO PRUEBA", "CRONOMETRO");
+    delay(1000);
+    
+    // Estado inicial visual
+    CronoMgr::reset(); 
 }
 
 void loop() {
-    // Mantener la matriz viva
+    // 1. Mantener Matrix viva
     DisplayMgr::updateRoutine();
 
-    // 1. LEER BOTONES
+    // 2. Lógica del Cronómetro (Dibuja el tiempo si está corriendo)
+    CronoMgr::update();
+
+    // 3. Leer Botones
     ButtonState btn = InputMgr::readButtons();
 
-    // 2. ACTUAR SEGÚN EL BOTÓN
     if (btn != BTN_NONE) {
-        // Solo entramos aquí si se presionó algo
-        Serial.println("Boton detectado!");
-
-        switch (btn) {
-            case BTN_UP:
-                DisplayMgr::printLCD(1, "Boton: ARRIBA");
-                DisplayMgr::printMatrix("UP");
-                break;
-            case BTN_DOWN:
-                DisplayMgr::printLCD(1, "Boton: ABAJO");
-                DisplayMgr::printMatrix("DOWN");
-                break;
-            case BTN_OK:
-                DisplayMgr::printLCD(1, "Boton: OK/ENT");
-                DisplayMgr::printMatrix("OK");
-                break;
-            case BTN_BACK:
-                DisplayMgr::printLCD(1, "Boton: ATRAS");
-                DisplayMgr::printMatrix("BACK");
-                break;
-            default:
-                break;
+        // --- CONTROL SIMPLE DEL CRONÓMETRO ---
+        
+        // Botón OK: Alterna entre START y PAUSE
+        if (btn == BTN_OK) {
+            if (CronoMgr::getState() == RUNNING) {
+                CronoMgr::pause();
+            } else {
+                CronoMgr::start();
+            }
         }
-    }
-
-    // 3. PRUEBA LDR (Opcional, descomentar para ver valores en Serial)
-    
-    static unsigned long ldrTimer = 0;
-    if (millis() - ldrTimer > 1000) {
-        ldrTimer = millis();
-        int luz = InputMgr::getAutoBrightness();
-        Serial.print("Nivel Luz: "); Serial.println(luz);
-        DisplayMgr::setMatrixBrightness(luz); // Prueba visual de auto-brillo
+        
+        // Botón ABAJO: RESET (Solo si no está corriendo)
+        if (btn == BTN_DOWN) {
+             if (CronoMgr::getState() != RUNNING) {
+                 CronoMgr::reset();
+             }
+        }
     }
 }
