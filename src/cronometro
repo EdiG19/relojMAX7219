@@ -1,0 +1,189 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <Ticker.h> // Necesario para el conteo de 1 segundo
+
+// --- 0. HARDWARE DEFINITIONS ---
+// PINES DE BOTONES (Se usa INPUT_PULLUP)
+#define MODE_BUTTON_PIN 13 // Usaremos este para RESET
+#define SET_BUTTON_PIN 27  // Usaremos este para START/PAUSE/RESUME
+
+// --- 1. CONFIGURACIÓN LCD I2C ---
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// --- 2. MÁQUINA DE ESTADOS DEL CRONÓMETRO ---
+enum CronoSubEstados {
+  CRONO_PARADO,    // Contador en 0 o mostrando un valor final, esperando START
+  CRONO_CORRIENDO, // Contador se incrementa activamente (RUN)
+  CRONO_PAUSADO    // Contador detenido, esperando RESUME o RESET
+};
+
+CronoSubEstados cronoEstado = CRONO_PARADO;
+
+// --- 3. VARIABLES DE CRONÓMETRO ---
+Ticker cronometroTicker;
+volatile int contadorCrono = 0; // Contador en segundos
+
+unsigned long lastButtonPress = 0; // Para el debounce de los botones
+
+// --- 4. PROTOTIPOS DE FUNCIONES ---
+void incrementarCrono();
+String obtenerTiempoFormateado();
+void iniciarCronometro();
+void detenerCronometro();
+void reiniciarCronometro();
+void actualizarLCDCrono();
+void manejarBotonesHardware();
+
+// ===============================================
+// === 5. FUNCIONES DE LÓGICA DEL CRONÓMETRO ===
+// ===============================================
+
+// Función llamada por el Ticker cada 1.0 segundo
+void incrementarCrono() {
+    // Solo incrementa si estamos en el estado CORRIENDO
+    if (cronoEstado == CRONO_CORRIENDO) { 
+        contadorCrono++;
+        // Como esta es una función llamada por el Ticker (interrupción),
+        // solo actualizamos la LCD en el loop principal o con un flag.
+        // Aquí lo actualizaremos directamente para simplificar.
+        actualizarLCDCrono();
+    }
+}
+
+void iniciarCronometro() {
+    // Adjunta la función de incremento al Ticker cada 1.0 segundo
+    cronometroTicker.attach(1.0, incrementarCrono); 
+}
+
+void detenerCronometro() {
+    // Detiene el Ticker. El tiempo se mantiene en contadorCrono.
+    cronometroTicker.detach();
+}
+
+void reiniciarCronometro() {
+    detenerCronometro();          // Asegura que el Ticker esté apagado
+    contadorCrono = 0;            // Resetea el tiempo a 0
+    cronoEstado = CRONO_PARADO;   // Establece el estado inicial
+    actualizarLCDCrono();
+}
+
+// Convierte el contador de segundos a formato HH:MM:SS
+String obtenerTiempoFormateado() {
+    int h = contadorCrono / 3600;
+    int m = (contadorCrono % 3600) / 60;
+    int s = contadorCrono % 60;
+    
+    char buffer[10]; // HH:MM:SS\0
+    sprintf(buffer, "%02d:%02d:%02d", h, m, s);
+    return String(buffer);
+}
+
+
+// ===============================================
+// === 6. FUNCIÓN DE MANEJO DE HARDWARE ===
+// ===============================================
+
+void manejarBotonesHardware() {
+    const unsigned long debounceDelay = 200; // 200ms
+    bool setPressed = digitalRead(SET_BUTTON_PIN) == LOW;
+    bool modePressed = digitalRead(MODE_BUTTON_PIN) == LOW;
+
+    if (!setPressed && !modePressed) {
+        lastButtonPress = 0;
+        return;
+    }
+    
+    if (millis() - lastButtonPress < debounceDelay) return;
+    lastButtonPress = millis();
+    
+    // --- Lógica de la Máquina de Estados del Cronómetro ---
+    
+    // 1. Botón SET: START / PAUSE / RESUME
+    if (setPressed) { 
+        if (cronoEstado == CRONO_PARADO) {
+            iniciarCronometro();
+            cronoEstado = CRONO_CORRIENDO;
+        } else if (cronoEstado == CRONO_CORRIENDO) {
+            detenerCronometro(); 
+            cronoEstado = CRONO_PAUSADO;
+        } else if (cronoEstado == CRONO_PAUSADO) {
+            iniciarCronometro(); // Reanuda
+            cronoEstado = CRONO_CORRIENDO;
+        }
+    } 
+    
+    // 2. Botón MODE: RESET/FINALIZAR (Solo funciona si no está PARADO)
+    else if (modePressed) { 
+        if (cronoEstado != CRONO_PARADO) {
+            reiniciarCronometro(); // Llama a la función que ya hace el reset
+        }
+    }
+
+    actualizarLCDCrono(); // Forzar actualización de la pantalla después de la acción
+}
+
+// ===============================================
+// === 7. FUNCIÓN DE DISPLAY (LCD) ===
+// ===============================================
+
+void actualizarLCDCrono() {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    
+    String estadoStr;
+    String accionStr;
+    
+    // Muestra el estado actual en la Línea 1
+    if (cronoEstado == CRONO_PARADO) {
+        estadoStr = "CRONO STOPPED";
+        accionStr = "[SET:START]";
+    } else if (cronoEstado == CRONO_CORRIENDO) {
+        estadoStr = "CRONO RUNNING";
+        accionStr = "[SET:PAUSE]";
+    } else { // CRONO_PAUSADO
+        estadoStr = "CRONO PAUSED";
+        accionStr = "[SET:RESUME] [MODE:RESET]";
+    }
+
+    lcd.print(estadoStr);
+    
+    // Muestra el tiempo y la acción en la Línea 2
+    lcd.setCursor(0, 1);
+    lcd.print(obtenerTiempoFormateado() + " ");
+    lcd.print(accionStr); 
+}
+
+
+// ===============================================
+// === 8. SETUP Y LOOP ===
+// ===============================================
+
+void setup() {
+    Serial.begin(115200);
+    Wire.begin(); // Inicializa I2C
+
+    // Inicializar LCD
+    lcd.init();
+    lcd.backlight();
+    lcd.setCursor(0, 0);
+    lcd.print("Cronometro Listo!");
+    lcd.setCursor(0, 1);
+    lcd.print("Presiona SET(27)");
+
+    // Inicializar Pines de Hardware (Botones)
+    pinMode(MODE_BUTTON_PIN, INPUT_PULLUP);
+    pinMode(SET_BUTTON_PIN, INPUT_PULLUP);
+    
+    delay(2000);
+    actualizarLCDCrono();
+}
+
+void loop() {
+    // La mayor parte del trabajo (conteo) lo hace el Ticker en segundo plano.
+    // Solo necesitamos procesar los botones constantemente.
+    manejarBotonesHardware();
+    
+    // Un pequeño delay para no sobrecargar el procesamiento de botones
+    delay(10); 
+}
