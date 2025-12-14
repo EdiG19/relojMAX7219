@@ -2,6 +2,7 @@
 #define GLOBALSETTINGS_H
 
 #include <Arduino.h>
+#define PIN_BUZZER 33 // Pin PWM 
 
 // Definimos las posibles fuentes de tiempo
 enum ClockSource {
