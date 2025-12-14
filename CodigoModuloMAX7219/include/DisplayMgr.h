@@ -33,6 +33,7 @@ public:
 
     // --- Funciones para Matriz (Hora/Crono) ---
     static void setMatrixBrightness(int intensity); // 0-15
+    static void setLcdBacklight(bool on);
     static void printMatrix(String text);
     static void updateRoutine(); // Llamar en el loop() para animaciones de Parola
 

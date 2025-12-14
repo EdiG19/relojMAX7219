@@ -54,7 +54,5 @@ int InputMgr::getAutoBrightness() {
     float valorNormalizado = (float)(val-30)/(1200-30);
     float curvedVal= pow(valorNormalizado,0.5);
     int brightness = (int)(curvedVal * 15);
-    // Limites de seguridad
-    
     return brightness;
 }

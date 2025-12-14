@@ -44,6 +44,14 @@ void DisplayMgr::setMatrixBrightness(int intensity) {
     matrix.setIntensity(intensity);
 }
 
+void DisplayMgr::setLcdBacklight(bool on) {
+    if (on) {
+        lcd.backlight();
+    } else {
+        lcd.noBacklight();
+    }
+}
+
 void DisplayMgr::printMatrix(String text) {
     // Convertimos String a char array para Parola
     matrix.setTextAlignment(PA_CENTER);
