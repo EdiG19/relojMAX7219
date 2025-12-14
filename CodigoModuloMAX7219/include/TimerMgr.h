@@ -1,51 +1,58 @@
 #ifndef TIMERMGR_H
 #define TIMERMGR_H
 
-#include <Arduino.h>
 #include <Ticker.h>
 #include "DisplayMgr.h"
-#include "AlarmMgr.h" // Para usar el sonido de alarma cuando el tiempo expire
+#include "AlarmMgr.h"
 
-// Estados internos del Temporizador
+// Enum para la precisión del temporizador
+enum TimerPrecision {
+    PRECISION_HMS,      // Horas:Minutos:Segundos
+    PRECISION_MS_CS     // Minutos:Segundos:Centésimas
+};
+
+// Enum para el estado del temporizador
 enum TimerState {
-    TMR_CONFIG = 0, // Esperando que el usuario fije el tiempo inicial
-    TMR_STOPPED,    // Tiempo inicial fijado, esperando START
-    TMR_RUNNING,    // Cuenta regresiva activa
-    TMR_PAUSED,     // Cuenta regresiva detenida
-    TMR_EXPIRED     // Llegó a 00:00:00
+    TMR_STOPPED,
+    TMR_RUNNING,
+    TMR_PAUSED,
+    TMR_EXPIRED
 };
 
 class TimerMgr {
 public:
-    static void init();
+    TimerMgr();
+    void init();
 
-    // --- Funciones de control (Callbacks) ---
-    static void start();
-    static void pause();
-    static void reset(); // Devuelve al tiempo fijado inicialmente (fixedTime)
-    
-    // Función principal para dibujar y gestionar el estado (Llamar en loop)
-    static void update();
+    // Configuración
+    void setPrecision(TimerPrecision precision);
+    void setInitialTime(unsigned long seconds);
 
-    // --- Funciones de Configuración (Desde el Menú) ---
-    // Setea el tiempo inicial (en segundos)
-    static void setInitialTime(unsigned long seconds); 
-    
-    // Devuelve el estado actual
-    static TimerState getState();
-    static String getFormattedTime();
+    // Controles
+    void start();
+    void pause();
+    void reset();
+
+    // Actualización y estado
+    void update();
+    TimerState getState();
+    String getFormattedTime();
+    TimerPrecision getPrecision();
 
 private:
-    static void onTick();
-    
-    // Variables internas
-    static Ticker ticker;
-    // Tiempo total a contar (en centésimas de segundo)
-    static unsigned long fixedTimeCentis; 
-    // Tiempo restante (en centésimas de segundo)
-    static volatile unsigned long remainingCentis; 
-    static TimerState state;
-    static bool dirty; 
+    static void tick_wrapper(); // El wrapper que Ticker llamará
+    void tick(); // El método de instancia real
+
+    TimerPrecision currentPrecision;
+    TimerState state;
+
+    Ticker timerTicker;
+    unsigned long initialTime_cs; // Tiempo inicial en centésimas de segundo
+    volatile unsigned long remainingTime_cs; // Tiempo restante en centésimas de segundo
+
+    volatile bool dirty; // Para saber si hay que redibujar
+
+    static TimerMgr* instance; // Puntero a la instancia para el wrapper estático
 };
 
-#endif
+#endif // TIMERMGR_H
