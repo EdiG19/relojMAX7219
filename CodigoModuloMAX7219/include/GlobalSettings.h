@@ -31,23 +31,25 @@ enum AppState {
     STATE_CLOCK,
     STATE_CRONO,
     STATE_TIMER,
-    STATE_MENU_MAIN,
 
-    // Sub-menús de configuración
+    // Menús
+    STATE_MENU_MAIN,
     STATE_MENU_WIFI,
     STATE_MENU_CLOCK,
-    STATE_MENU_ALARM_LIST,
-    STATE_MENU_ALARM_EDIT,
-    STATE_MENU_BRIGHTNESS,
-    STATE_MENU_TIMER,
     STATE_MENU_CRONO,
+    STATE_MENU_TIMER,
+    STATE_MENU_ALARM_LIST,
+    STATE_MENU_BRIGHTNESS,
 
-    // Estados de edición (pantallas específicas para cambiar un valor)
+    // Estados de edición/procesos
+    STATE_WIFI_CONNECTING,
     STATE_EDIT_MANUAL_TIME,
     STATE_EDIT_TIMER,
     STATE_EDIT_ALARM,
-    STATE_EDIT_BRIGHTNESS,
-    STATE_WIFI_CONNECTING
+    STATE_EDIT_ALARM_TIME,
+    STATE_EDIT_ALARM_TONE,
+    STATE_EDIT_ALARM_VOLUME,
+    STATE_EDIT_BRIGHTNESS
 };
 
 // --- ESTRUCTURAS DE DATOS ---

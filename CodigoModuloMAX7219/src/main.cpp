@@ -78,6 +78,7 @@ void loop() {
         case STATE_EDIT_ALARM_TONE: handleEditAlarmToneState(); break;
         case STATE_MENU_BRIGHTNESS: handleBrightnessMenuState(); break;
         case STATE_EDIT_BRIGHTNESS: handleEditBrightnessState(); break;
+        case STATE_EDIT_ALARM_VOLUME: handleEditAlarmVolumeState(); break;
         default:
             GlobalSettings::appState = STATE_CLOCK;
             break;
@@ -487,8 +488,8 @@ void handleSetTimeManualState() {
         } else {
             RtcDateTime now = RTCMgr::now();
             RtcDateTime newTime(now.Year(), now.Month(), now.Day(), tempHour, tempMinute, 0);
-            RTCMgr::setDateTime(newTime);
-            DisplayMgr::showMenuState("Hora Guardada", newTime.format("H:i:s"));
+            RTCMgr::adjust(newTime);
+            //DisplayMgr::showMenuState("Hora Guardada", newTime.format("H:i:s"));
             delay(1500);
             GlobalSettings::editingIndex = 0;
             GlobalSettings::appState = STATE_MENU_CLOCK;
@@ -561,7 +562,7 @@ bool syncRTCToNTP() {
         return false;
     }
     RtcDateTime ntpTime(timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-    RTCMgr::setDateTime(ntpTime);
+    RTCMgr::adjust(ntpTime);
     Serial.println("RTC sincronizado con hora NTP");
     return true;
 }
