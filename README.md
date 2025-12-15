@@ -7,6 +7,8 @@ Proyecto de un reloj digital multifunción implementado con ESP32 y módulos LED
 - Menú de configuración mediante botones
 El proyecto está diseñado de forma modular, facilitando su mantenimiento, expansión y comprensión.
 
+![Imagen de Circuito](image.png)
+
 El proyecto es un reloj digital multifuncional basado en el ESP32 que utiliza un módulo RTC (DS1302) para la hora y matrices MAX7219 para la visualización.
 
 # Reloj Digital con MAX7219 y Arduino
@@ -57,4 +59,4 @@ Se utiliza la librería `LedControl.h`, que permite controlar el MAX7219 con fun
 LedControl lc = LedControl(12, 11, 10, 1);
 ```
 
-![Imagen de Circuito](image.png)
+
