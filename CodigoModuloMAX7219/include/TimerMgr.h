@@ -22,35 +22,35 @@ enum TimerState {
 class TimerMgr {
 public:
     TimerMgr();
-    void init();
+    static void init();
 
     // Configuración
-    void setPrecision(TimerPrecision precision);
-    void setInitialTime(unsigned long seconds);
+    static void setPrecision(TimerPrecision precision);
+    static void setInitialTime(unsigned long seconds);
 
     // Controles
-    void start();
-    void pause();
-    void reset();
+    static void start();
+    static void pause();
+    static void reset();
 
     // Actualización y estado
-    void update();
-    TimerState getState();
-    String getFormattedTime();
-    TimerPrecision getPrecision();
+    static void update();
+    static TimerState getState();
+    static String getFormattedTime();
+    static TimerPrecision getPrecision();
 
 private:
-    static void tick_wrapper(); // El wrapper que Ticker llamará
-    void tick(); // El método de instancia real
+    static void onTick(); // El método de instancia real
 
-    TimerPrecision currentPrecision;
-    TimerState state;
+    static TimerPrecision currentPrecision;
+    
+    static TimerState state;
 
-    Ticker timerTicker;
-    unsigned long initialTime_cs; // Tiempo inicial en centésimas de segundo
-    volatile unsigned long remainingTime_cs; // Tiempo restante en centésimas de segundo
+    static Ticker timerTicker;
+    static unsigned long initialTime_cs; // Tiempo inicial en centésimas de segundo
+    static volatile unsigned long remainingTime_cs; // Tiempo restante en centésimas de segundo
 
-    volatile bool dirty; // Para saber si hay que redibujar
+    static volatile bool dirty; // Para saber si hay que redibujar
 
     static TimerMgr* instance; // Puntero a la instancia para el wrapper estático
 };
