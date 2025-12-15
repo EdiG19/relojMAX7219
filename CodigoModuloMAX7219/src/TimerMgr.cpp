@@ -1,51 +1,52 @@
 #include "TimerMgr.h"
-#include "GlobalSettings.h"
-#include "DisplayMgr.h"
-#include "AlarmMgr.h"
 
-// Inicialización del puntero a la instancia estática
+// Inicialización de variables estáticas
+TimerPrecision TimerMgr::currentPrecision = PRECISION_MS_CS;
+TimerState TimerMgr::state = TMR_STOPPED;
+Ticker TimerMgr::timerTicker;
+unsigned long TimerMgr::initialTime_cs = 0;
+volatile unsigned long TimerMgr::remainingTime_cs = 0;
+volatile bool TimerMgr::dirty = true;
 TimerMgr* TimerMgr::instance = nullptr;
 
 TimerMgr::TimerMgr() {
-    // Asignar la instancia actual al puntero estático
-    instance = this;
+    // Constructor privado para el patrón singleton (aunque usemos estáticos)
 }
 
 void TimerMgr::init() {
-    this->currentPrecision = PRECISION_HMS; // Precisión por defecto
-    this->state = TMR_STOPPED;
-    this->initialTime_cs = 6000; // Por defecto 1 minuto (60s * 100)
-    this->remainingTime_cs = this->initialTime_cs;
-    this->dirty = true;
+    state = TMR_STOPPED;
+    remainingTime_cs = initialTime_cs;
+    dirty = true;
 }
 
 void TimerMgr::setPrecision(TimerPrecision precision) {
-    this->currentPrecision = precision;
-    this->dirty = true; // Forzar redibujo para mostrar el nuevo formato
+    currentPrecision = precision;
+    dirty = true; // Forzar redibujado con el nuevo formato
 }
 
 void TimerMgr::setInitialTime(unsigned long seconds) {
-    // Detenemos el temporizador para cambiar el tiempo de forma segura
-    if (this->state == TMR_RUNNING) {
-        pause();
+    // Siempre almacenamos en centésimas de segundo
+    initialTime_cs = seconds * 100;
+    if (state == TMR_STOPPED || state == TMR_EXPIRED) {
+        remainingTime_cs = initialTime_cs;
+        dirty = true;
     }
-    this->initialTime_cs = seconds * 100;
-    this->remainingTime_cs = this->initialTime_cs;
-    this->dirty = true;
 }
 
 void TimerMgr::start() {
-    if (state == TMR_STOPPED || state == TMR_PAUSED) {
+    if (state != TMR_RUNNING && remainingTime_cs > 0) {
+        // El Ticker se configura a 10ms (100 veces por segundo)
+        timerTicker.attach_ms(10, onTick);
         state = TMR_RUNNING;
-        // La interrupción se ejecuta cada 10ms (1cs)
-        timerTicker.attach_ms(10, tick_wrapper);
+        dirty = true;
     }
 }
 
 void TimerMgr::pause() {
     if (state == TMR_RUNNING) {
-        state = TMR_PAUSED;
         timerTicker.detach();
+        state = TMR_PAUSED;
+        dirty = true;
     }
 }
 
@@ -53,73 +54,69 @@ void TimerMgr::reset() {
     timerTicker.detach();
     state = TMR_STOPPED;
     remainingTime_cs = initialTime_cs;
-    AlarmMgr::stopTone(); // Si estaba sonando, lo para
-    dirty = true;
+    dirty = true; // Forzar repintado
+}
+
+void TimerMgr::update() {
+    if (state == TMR_EXPIRED) {
+        // Si el tiempo ha expirado, hacemos sonar la alarma
+        AlarmMgr::soundAlarm();
+        // Cambiamos a STOPPED para que la alarma no se dispare continuamente
+        state = TMR_STOPPED; 
+    }
+
+    if (dirty) {
+        DisplayMgr::printMatrix(getFormattedTime());
+        dirty = false;
+    }
 }
 
 TimerState TimerMgr::getState() {
     return state;
 }
 
-// Wrapper estático que llama al método de instancia
-void TimerMgr::tick_wrapper() {
-    if (instance) {
-        instance->tick();
-    }
-}
-
-void TimerMgr::tick() {
-    if (remainingTime_cs > 0) {
-        remainingTime_cs--;
-        // No marcamos 'dirty' aquí para no sobrecargar el loop principal desde una ISR.
-        // El loop principal se encargará de redibujar periódicamente.
-    } else {
-        state = TMR_EXPIRED;
-        timerTicker.detach(); // Paramos el ticker
-        AlarmMgr::playTone(GlobalSettings::alarmToneIndex); // Hacemos sonar la alarma
-        dirty = true; // Forzamos un último redibujo a "00:00:00"
-    }
+TimerPrecision TimerMgr::getPrecision() {
+    return currentPrecision;
 }
 
 String TimerMgr::getFormattedTime() {
-    unsigned long total_cs = remainingTime_cs;
+    unsigned long time_cs = remainingTime_cs;
     char buffer[12];
 
     if (currentPrecision == PRECISION_HMS) {
-        unsigned long total_s = total_cs / 100;
+        // Formato HH:MM:SS
+        unsigned long total_s = time_cs / 100;
         int h = total_s / 3600;
         int m = (total_s % 3600) / 60;
         int s = total_s % 60;
         sprintf(buffer, "%02d:%02d:%02d", h, m, s);
     } else { // PRECISION_MS_CS
-        int cs = total_cs % 100;
-        unsigned long total_s = total_cs / 100;
+        // Formato MM:SS:CS
+        unsigned long total_s = time_cs / 100;
         int m = total_s / 60;
         int s = total_s % 60;
+        int cs = time_cs % 100;
         sprintf(buffer, "%02d:%02d:%02d", m, s, cs);
     }
     return String(buffer);
 }
 
-TimerPrecision TimerMgr::getPrecision() {
-    return currentPrecision;
-}
+// --- Métodos Privados ---
 
-void TimerMgr::update() {
-    // Forzamos un redibujo periódico cuando está corriendo para ver los centisegundos
-    if (state == TMR_RUNNING && currentPrecision == PRECISION_MS_CS) {
+void TimerMgr::onTick() {
+    if (remainingTime_cs > 0) {
+        remainingTime_cs--;
         dirty = true;
-    }
-    
-    if (dirty) {
-        String timeStr = getFormattedTime();
-        DisplayMgr::printMatrix(timeStr.c_str());
-        
-        if (state == TMR_EXPIRED) {
-            DisplayMgr::printLCD(0, "¡TIEMPO!");
-            DisplayMgr::printLCD(1, "Pulsa OK");
+
+        // Optimización: solo redibujar si el segundo cambia en modo HMS
+        if (currentPrecision == PRECISION_HMS && remainingTime_cs % 100 != 0) {
+            dirty = false;
         }
-        
-        dirty = false;
+
+    } else {
+        // El tiempo ha llegado a cero
+        timerTicker.detach();
+        state = TMR_EXPIRED;
+        dirty = true;
     }
 }
