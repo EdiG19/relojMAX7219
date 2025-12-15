@@ -1,5 +1,10 @@
 #include "GlobalSettings.h"
 
+<<<<<<< HEAD
+// --- Alarmas ---
+AlarmConfig GlobalSettings::alarms[3];
+uint8_t GlobalSettings::alarmVolume;
+=======
 // ==========================================
 // DEFINICIÓN DE VARIABLES ESTÁTICAS
 // ==========================================
@@ -34,11 +39,17 @@ uint8_t GlobalSettings::alarmVolume;
 // NOTA: alarmToneIndex SE ELIMINÓ porque ahora el tono
 // es parte de la estructura AlarmConfig (alarms[i].tone).
 
+>>>>>>> 646555413e0a63ad482b81c74405e95396c979ba
 
 // --- Conectividad ---
 // En .h: static bool wifiEnabled;
 bool GlobalSettings::wifiEnabled;
 
+<<<<<<< HEAD
+// --- Hardware ---
+BrightnessMode GlobalSettings::brightnessMode;
+uint8_t GlobalSettings::matrixBrightness;
+=======
 
 // --- Hardware y Brillo ---
 // En .h: static BrightnessMode brightnessMode;
@@ -55,3 +66,4 @@ AppState GlobalSettings::appState;
 
 // En .h: static int editingIndex;
 int GlobalSettings::editingIndex;
+>>>>>>> 646555413e0a63ad482b81c74405e95396c979ba

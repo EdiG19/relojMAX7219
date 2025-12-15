@@ -1,65 +1,56 @@
 #include <Arduino.h>
-#include <EEPROM.h>
 #include "GlobalSettings.h"
-#include "DisplayMgr.h"
-#include "InputMgr.h"
-#include "RTCMgr.h"
-#include "MenuMgr.h"
-#include "CronoMgr.h"
-#include "TimerMgr.h"
-#include "AlarmMgr.h"
-#include "EepromMgr.h"
-#include "WiFiMgr.h"
+#include "InputMgr.h" // Ahora incluimos este fichero que trae PIN_LDR
 
-// --- DECLARACIÓN DE FUNCIONES DE ESTADO ---
-void handleClockState();
-void handleMenuState();
-void handleCronoState();
-void handleTimerState();
-void handleWifiMenuState();
-void handleWifiConnectingState();
-void handleClockMenuState();
-void handleSetTimeManualState();
-void handleCronoMenuState();
-void handleTimerMenuState();
-void handleEditTimerState();
-void handleAlarmListState();
-void handleEditAlarmState();
-void handleEditAlarmTimeState();
-void handleEditAlarmToneState();
-void handleBrightnessMenuState();
-void handleEditBrightnessState();
-void handleEditAlarmVolumeState();
+// --- CONFIGURACIÓN DE PANTALLA ---
+// Asegúrate de tener la librería "LedControl" instalada o cambia por la tuya.
+#include "LedControl.h" 
 
-// --- DECLARACIÓN DE FUNCIONES AUXILIARES ---
-bool syncRTCToNTP();
+// Pines SPI para el MAX7219 (Ajusta si son diferentes en tu PCB)
+const int DATA_PIN = 23; // MOSI habitual en ESP32
+const int CLK_PIN  = 18; // SCK habitual en ESP32
+const int CS_PIN   = 5;  // SS habitual en ESP32
 
+// Inicializamos para 4 módulos en cascada (típico en relojes)
+LedControl display = LedControl(DATA_PIN, CLK_PIN, CS_PIN, 4); 
 
 void setup() {
     Serial.begin(115200);
-    EEPROM.begin(EEPROM_SIZE);
-    EepromMgr::loadSettings();
-    DisplayMgr::init();
-    InputMgr::init();
-    MenuMgr::init();
-    CronoMgr::init();
-    TimerMgr::init();
-    AlarmMgr::init();
-    WiFiMgr::init();
-    DisplayMgr::showMenuState("INICIANDO...", "HW Check");
-    delay(500);
-    if (!RTCMgr::init()) {
-        Serial.println("Fallo RTC");
-        DisplayMgr::showMenuState("ERROR HARDWARE", "Fallo RTC I2C");
-        while (1);
+    Serial.println("\n--- TEST DE BRILLO AUTOMÁTICO (GPIO 32) ---");
+
+    // 1. Inicialización de tus gestores
+    // InputMgr::init() configura el PIN_LDR (32) internamente.
+    InputMgr::init(); 
+    
+    // GlobalSettings no es estrictamente necesario para este test aislado,
+    // pero lo iniciamos por buena práctica.
+    GlobalSettings::init(); 
+
+    // 2. Inicialización del Hardware MAX7219
+    for(int i=0; i<4; i++) {
+        display.shutdown(i, false); // Despertar pantalla
+        display.clearDisplay(i);    // Limpiar basura
+        display.setIntensity(i, 1); // Empezar bajito
     }
-    DisplayMgr::printMatrix("LISTO");
-    delay(1000);
+
+    // Dibujamos algo para ver el cambio de brillo (ej. "LUZ")
+    // (Esto es simplificado, depende de tu librería de fuentes)
+    display.setChar(0, 3, 'L', false);
+    display.setChar(0, 2, 'U', false);
+    display.setChar(0, 1, 'Z', false);
 }
 
 void loop() {
-    DisplayMgr::updateRoutine();
+    // 1. Obtener el brillo calculado
+    // Llama a tu función que ya tiene la curva gamma y los límites (30-1200)
+    int brilloCalculado = InputMgr::getAutoBrightness();
 
+<<<<<<< HEAD
+    // 2. Aplicar el brillo a la pantalla
+    // El MAX7219 acepta 0-15. Tu función getAutoBrightness ya devuelve 0-15.
+    for(int i=0; i<4; i++) {
+        display.setIntensity(i, brilloCalculado);
+=======
     switch (GlobalSettings::appState) {
         case STATE_CLOCK: handleClockState(); break;
         case STATE_MENU_MAIN: handleMenuState(); break;
@@ -102,7 +93,9 @@ void handleClockState() {
         } else { // MANUAL
             DisplayMgr::setMatrixBrightness(GlobalSettings::matrixBrightness);
         }
+>>>>>>> 646555413e0a63ad482b81c74405e95396c979ba
     }
+<<<<<<< HEAD
     
     DisplayMgr::printLCD(0, "Modo Reloj");
     static unsigned long lastUpdate = 0;
@@ -146,10 +139,23 @@ void handleMenuState() {
 void handleBrightnessMenuState() {
     static int menuIndex = 0;
     const char* options[] = {"Modo Brillo", "Nivel Manual", "Volumen Alarma"};
-    
-    DisplayMgr::printLCD(0, "Menu Brillo/Sonido");
-    String line = "> " + String(options[menuIndex]);
+=======
 
+    // 3. Depuración Serial (Monitor Serie)
+    // Usamos PIN_LDR directamente porque está definido en InputMgr.h
+    int valorCrudo = analogRead(PIN_LDR); 
+>>>>>>> 088a82ae1f0c33770c351082ad7c037b2e2b4871
+    
+    Serial.print("Sensor en Pin ");
+    Serial.print(PIN_LDR);
+    Serial.print(" | Valor Crudo: ");
+    Serial.print(valorCrudo);
+    Serial.print(" | Brillo Calculado (0-15): ");
+    Serial.println(brilloCalculado);
+
+<<<<<<< HEAD
+    delay(200); // Refresco rápido para notar cambios al tapar el sensor
+=======
     if (menuIndex == 0) { // Modo
         if (GlobalSettings::brightnessMode == BRIGHTNESS_AUTO) line += " (Auto)";
         else if (GlobalSettings::brightnessMode == BRIGHTNESS_MANUAL) line += " (Manual)";
@@ -620,4 +626,5 @@ void handleTimerState() {
         GlobalSettings::appState = STATE_MENU_TIMER;
         MenuMgr::draw();
     }
+>>>>>>> 646555413e0a63ad482b81c74405e95396c979ba
 }
