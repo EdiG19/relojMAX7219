@@ -1,23 +1,12 @@
 #include "GlobalSettings.h"
 
-// Definición e inicialización de las variables estáticas
-
-// --- Reloj ---
-bool GlobalSettings::use24hFormat;
-int  GlobalSettings::timeZoneOffset;
-ClockSource GlobalSettings::clockSource;
-
-// --- Alarma ---
+// --- Alarmas ---
 AlarmConfig GlobalSettings::alarms[3];
-int  GlobalSettings::alarmVolume;
-int  GlobalSettings::alarmToneIndex;
+uint8_t GlobalSettings::alarmVolume;
 
 // --- Conectividad ---
 bool GlobalSettings::wifiEnabled;
 
-// --- Hardware y Brillo ---
+// --- Hardware ---
 BrightnessMode GlobalSettings::brightnessMode;
-int  GlobalSettings::matrixBrightness;
-
-// --- Estado de la App ---
-AppState GlobalSettings::appState;
+uint8_t GlobalSettings::matrixBrightness;
