@@ -93,15 +93,17 @@ void handleClockState() {
     // Actualizar brillo automático
     if (millis() - lastBrightnessUpdate > 500) {
         lastBrightnessUpdate = millis();
+        int nivelBrillo=3;
         if (GlobalSettings::brightnessMode == BRIGHTNESS_AUTO) {
             DisplayMgr::setMatrixBrightness(InputMgr::getAutoBrightness());
         } else if (GlobalSettings::brightnessMode == BRIGHTNESS_NIGHT) {
             DisplayMgr::setMatrixBrightness(0);
+            
         } else { // MANUAL
             DisplayMgr::setMatrixBrightness(GlobalSettings::matrixBrightness);
         }
     }
-
+    
     DisplayMgr::printLCD(0, "Modo Reloj");
     static unsigned long lastUpdate = 0;
     if (millis() - lastUpdate >= 1000) {
@@ -172,6 +174,12 @@ void handleBrightnessMenuState() {
         if (menuIndex == 0) { // Cambiar modo
             int currentMode = (int)GlobalSettings::brightnessMode;
             GlobalSettings::brightnessMode = (BrightnessMode)((currentMode + 1) % 3);
+            // Aplicar cambio de backlight de LCD instantáneamente
+            if (GlobalSettings::brightnessMode == BRIGHTNESS_NIGHT) {
+                DisplayMgr::setLcdBacklight(false);
+            } else {
+                DisplayMgr::setLcdBacklight(true);
+            }
         } else if (menuIndex == 1) { // Ir a editar nivel
             if (GlobalSettings::brightnessMode == BRIGHTNESS_MANUAL) {
                 GlobalSettings::appState = STATE_EDIT_BRIGHTNESS;
@@ -179,6 +187,8 @@ void handleBrightnessMenuState() {
                 DisplayMgr::showMenuState("Modo no Manual", "Cambie a Manual");
                 delay(1500);
             }
+        } else if (menuIndex == 2) { // Ir a editar volumen
+            GlobalSettings::appState = STATE_EDIT_ALARM_VOLUME;
         }
     }
 }
@@ -199,6 +209,26 @@ void handleEditBrightnessState() {
         if(GlobalSettings::matrixBrightness < 15) GlobalSettings::matrixBrightness++;
     } else if (btn == BTN_DOWN) {
         if(GlobalSettings::matrixBrightness > 0) GlobalSettings::matrixBrightness--;
+    } else if (btn == BTN_BACK || btn == BTN_OK) {
+        GlobalSettings::appState = STATE_MENU_BRIGHTNESS;
+    }
+}
+
+void handleEditAlarmVolumeState() {
+    DisplayMgr::printLCD(0, "Ajustar Volumen");
+    String levelBar = "";
+    // El volumen va de 0 a 10. Mapeamos a 16 para la barra.
+    int barLevel = map(GlobalSettings::alarmVolume, 0, 10, 0, 15);
+    for (int i = 0; i < 16; i++) {
+        levelBar += (i <= barLevel) ? "#" : "-";
+    }
+    DisplayMgr::printLCD(1, levelBar);
+    
+    ButtonState btn = InputMgr::readButtons();
+    if (btn == BTN_UP) {
+        if(GlobalSettings::alarmVolume < 10) GlobalSettings::alarmVolume++;
+    } else if (btn == BTN_DOWN) {
+        if(GlobalSettings::alarmVolume > 0) GlobalSettings::alarmVolume--;
     } else if (btn == BTN_BACK || btn == BTN_OK) {
         GlobalSettings::appState = STATE_MENU_BRIGHTNESS;
     }

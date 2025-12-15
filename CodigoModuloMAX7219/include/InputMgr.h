@@ -10,7 +10,6 @@
 #define PIN_BTN_BACK   4  // D27 (Opcional)
 
 #define PIN_LDR        32  // Pin Analógico (ADC1) para el sensor de luz
-
 // --- ESTADOS DE LOS BOTONES ---
 enum ButtonState {
     BTN_NONE = 0,

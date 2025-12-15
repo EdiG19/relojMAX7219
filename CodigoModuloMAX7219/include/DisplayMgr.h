@@ -17,8 +17,10 @@
 // MATRIZ MAX7219
 // Nota: Usamos VSPI por defecto (CLK=18, MOSI=23 en ESP32)
 #define HARDWARE_TYPE MD_MAX72XX::GENERIC_HW
-#define MAX_DEVICES   4
+#define MAX_DEVICES   6
 #define CS_PIN        27
+
+#define LCD_PWM_PIN 26  // Pin conectado al Jumper del LCD)
 
 // Clase estática o Namespace para manejar las pantallas globalmente
 class DisplayMgr {
@@ -41,6 +43,7 @@ private:
     // Objetos internos (no accesibles desde fuera)
     static LiquidCrystal_I2C lcd;
     static MD_Parola matrix;
+    static String lcd_buffer[LCD_ROWS];
 };
 
 #endif
