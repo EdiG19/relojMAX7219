@@ -1,11 +1,11 @@
 
 ![Diagrama de Conexión del Reloj](Anexos/CIRCUITO.png)
 
-# ⌚ Reloj Digital Multifunción MAX7219 con ESP32 y Wi-Fi
+# Reloj Digital Multifunción MAX7219 con ESP32 y Wi-Fi
 
 Este repositorio alberga el firmware para un proyecto de reloj digital avanzado y multifuncional, diseñado para ser ejecutado en la placa de desarrollo **ESP32 DevKit V1**. El proyecto supera la función básica de un reloj al integrar modos de operación avanzados, conectividad inalámbrica y una interfaz de usuario completa. La arquitectura del software está diseñada para ser modular y escalable.
 
-## 🚀 Características Principales del Proyecto
+## Características Principales del Proyecto
 
 | Característica | Descripción | Componentes Relevantes |
 | :--- | :--- | :--- |
@@ -16,7 +16,7 @@ Este repositorio alberga el firmware para un proyecto de reloj digital avanzado 
 | **Menú de Configuración** | Interfaz local mediante botones y la \textbf{Pantalla LCD I2C} para la configuración de modos, alarmas y Wi-Fi. | Pantalla LCD I2C, Botones. |
 | **Control Remoto (Wi-Fi)** | El ESP32 actúa como un Servidor Web, permitiendo la configuración remota de la alarma y el control del cronómetro desde un navegador. | ESP32 (Servidor HTTP). |
 
-## 🛠️ Componentes de Hardware Requeridos
+## Componentes de Hardware Requeridos
 
 Este proyecto requiere los siguientes módulos de hardware para su implementación completa:
 
@@ -29,11 +29,11 @@ Este proyecto requiere los siguientes módulos de hardware para su implementaci�
 
 
 
-## 💻 Estructura del Software y Modularidad
+## Estructura del Software y Modularidad
 
 El código sigue una estructura modular para facilitar su mantenimiento y comprensión, basada en la separación de interfaces y su implementación: 
 
-### 1. Relación entre Carpetas `include` y `src`
+###  Relación entre Carpetas `include` y `src`
 
 | Carpeta | Contenido | Función en el Proyecto |
 | :--- | :--- | :--- |
@@ -61,7 +61,7 @@ $$\text{IF } (H_{actual} = H_{alarma}) \land (M_{actual} = M_{alarma}) \text{ TH
 
 El modo Wi-Fi permite la sincronización NTP y actúa como un **Servidor HTTP** accesible en la red local . Esto proporciona una interfaz remota para la configuración y el control de las funciones del reloj.
 
-## ⚙️ Implementación del Display (MAX7219)
+## Implementación del Display (MAX7219)
 
 El control del display se realiza utilizando una librería adecuada para el **MAX7219** (como `LedControl.h`).
 
