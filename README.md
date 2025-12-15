@@ -34,17 +34,14 @@ El tiempo se gestiona mediante un **temporizador por software** basado en la fun
 
 ### Estructura de Archivos
 
-| Archivo/Carpeta | Descripción |
-| :--- | :--- |
-| `relojMAX7219.ino` | Archivo principal de Arduino que contiene la lógica del reloj y la visualización. |
-| `README.md` | Este archivo. |
-| `LICENCE` | Licencia de distribución del código. |
+relojMAX7219 (Archivo principal) Contiene todo el código fuente del reloj: la lógica de conteo de tiempo (variables HORA, MINUTO, SEGUNDO), la inicialización del hardware, y las funciones que envían los datos de los dígitos al MAX7219. Es el "Cerebro" del reloj.
 
 ### Componentes de Hardware Requeridos
 
-* **Microcontrolador:** Placa Arduino (Uno, Nano, etc.).
+* **Microcontrolador:** ESP32 DevKit V1
 * **Módulo de Display:** Módulo de 8x8 o display de 7 segmentos basado en el chip MAX7219.
 * **Cableado:** Conexiones de alimentación (VCC, GND) y Pines de control serial (DIN, CLK, LOAD).
+
 
 ## 3. Funcionamiento del Código (`relojMAX7219.ino`)
 
