@@ -1,24 +1,27 @@
 #include "MenuMgr.h"
-#include "GlobalSettings.h" // Para acceder a los estados de la app
+#include "GlobalSettings.h"
 #include "CronoMgr.h"
 #include "TimerMgr.h"
 
 // --- Declaración de las funciones que se llamarán desde el menú ---
-// Estas funciones simplemente cambian el estado global de la aplicación.
-// La lógica de cada modo (qué hacer en STATE_CRONO, etc.) se manejará en main.cpp
-void enterClockMode()   { GlobalSettings::appState = STATE_CLOCK; }
-void enterCronoMode()   { CronoMgr::init(); GlobalSettings::appState = STATE_CRONO; }
-void enterTimerMode()   { TimerMgr::init(); GlobalSettings::appState = STATE_TIMER; }
-void enterAlarmsMenu()  { GlobalSettings::appState = STATE_MENU_ALARM; }
-void enterConfigMenu()  { GlobalSettings::appState = STATE_MENU_CONFIG; }
+// Simplemente cambian el estado global. La lógica la lleva main.cpp
+void enterWifiConfig()    { GlobalSettings::appState = STATE_MENU_WIFI; }
+void enterClockConfig()   { GlobalSettings::appState = STATE_MENU_CLOCK; }
+void enterCronoMode()     { GlobalSettings::appState = STATE_MENU_CRONO; }
+void enterTimerMode()     { GlobalSettings::appState = STATE_MENU_TIMER; }
+void enterAlarmsMenu()    { GlobalSettings::appState = STATE_MENU_ALARM_LIST; }
+void enterBrightnessMenu(){ GlobalSettings::appState = STATE_MENU_BRIGHTNESS; }
+
 
 // --- Definición de los ítems del Menú Principal ---
+// Los textos están abreviados para que quepan en un LCD 16x2
 MenuItem MenuMgr::menuItems[] = {
-    {"1. Ver Reloj",     enterClockMode},
-    {"2. Cronometro",    enterCronoMode},
-    {"3. Temporizador",  enterTimerMode},
-    {"4. Alarmas",       enterAlarmsMenu},
-    {"5. Configuracion", enterConfigMenu}
+    {"1. Config WiFi",   enterWifiConfig},
+    {"2. Config Reloj",  enterClockConfig},
+    {"3. Cronometro",    enterCronoMode},
+    {"4. Temporizador",  enterTimerMode},
+    {"5. Alarmas",       enterAlarmsMenu},
+    {"6. Brillo",        enterBrightnessMenu}
 };
 
 // --- Inicialización de variables estáticas ---
@@ -47,18 +50,19 @@ void MenuMgr::handleNavigation(ButtonState btn) {
         }
     }
 
-    // Lógica para el scroll del LCD
-    if (currentIndex < topVisibleIndex) {
-        topVisibleIndex = currentIndex; // Scroll hacia arriba
-    } else if (currentIndex >= topVisibleIndex + LCD_ROWS) {
-        topVisibleIndex = currentIndex - LCD_ROWS + 1; // Scroll hacia abajo
+    // Lógica para el scroll del LCD (si tienes más de 2 filas)
+    if (LCD_ROWS > 0) { // Evitar división por cero si no está definido
+        if (currentIndex < topVisibleIndex) {
+            topVisibleIndex = currentIndex;
+        } else if (currentIndex >= topVisibleIndex + LCD_ROWS) {
+            topVisibleIndex = currentIndex - LCD_ROWS + 1;
+        }
     }
-
+    
     draw(); // Redibujar el menú después de cada cambio
 }
 
 void MenuMgr::executeAction() {
-    // Llama a la función asociada al ítem actual (ej: enterCronoMode)
     if (menuItems[currentIndex].action != nullptr) {
         menuItems[currentIndex].action();
     }
@@ -66,23 +70,15 @@ void MenuMgr::executeAction() {
 
 void MenuMgr::draw() {
     DisplayMgr::clearLCD();
+    DisplayMgr::printLCD(0, "Menu Principal"); // Un título para el menú
 
-    // Dibuja los ítems visibles en el LCD (máximo LCD_ROWS)
-    for (int i = 0; i < LCD_ROWS; i++) {
-        int itemIndex = topVisibleIndex + i;
-
-        if (itemIndex < itemsCount) {
-            String line = "";
-            
-            // Añade un cursor ">" al ítem seleccionado
-            if (itemIndex == currentIndex) {
-                line += ">";
-            } else {
-                line += " ";
-            }
-
-            line += menuItems[itemIndex].title;
-            DisplayMgr::printLCD(i, line);
-        }
+    // Dibuja los ítems visibles en el LCD
+    // Asumimos un LCD de 2 filas, por lo que la segunda fila muestra el item.
+    // Si tuvieras 4 filas, este bucle sería más complejo.
+    
+    // Muestra el item seleccionado en la segunda línea
+    if (currentIndex < itemsCount) {
+        String line = "> " + menuItems[currentIndex].title;
+        DisplayMgr::printLCD(1, line);
     }
 }
