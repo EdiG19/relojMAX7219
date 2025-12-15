@@ -31,7 +31,7 @@ Este proyecto requiere los siguientes módulos de hardware para su implementaci�
 
 ## 💻 Estructura del Software y Modularidad
 
-El código sigue una estructura modular para facilitar su mantenimiento y comprensión, basada en la separación de interfaces y su implementación:
+El código sigue una estructura modular para facilitar su mantenimiento y comprensión, basada en la separación de interfaces y su implementación: 
 
 ### 1. Relación entre Carpetas `include` y `src`
 
@@ -44,38 +44,28 @@ Esta estructura asegura que el archivo principal de ejecución (`main.cpp`) solo
 
 ### 2. Lógica de Modos Operativos
 
-El núcleo del firmware gestiona los diferentes modos operativos a través de una **Máquina de Estados Finita (FSM)**:
+El núcleo del firmware gestiona los diferentes modos operativos a través de una **Máquina de Estados Finita (FSM)**.
 
 #### 2.1. Modo de Reloj y Sincronización
 
 1.  **Obtención de Tiempo:** El sistema prioriza la lectura del \textbf{RTC DS102}.
-2.  **Sincronización:** Si el Wi-Fi está activo, se realiza una consulta al servidor \textbf{NTP}. Si la consulta es exitosa, se utiliza esa hora de alta precisión para **corregir y actualizar el RTC**.
-3.  **Visualización:** El tiempo (HH:MM:SS) se formatea ($0 \leq H \leq 23$) y se envía continuamente al \textbf{MAX7219} a través de la comunicación SPI.
+2.  **Sincronización:** Si el Wi-Fi está activo, se realiza una consulta al servidor **NTP**. Si la consulta es exitosa, se utiliza esa hora de alta precisión para **corregir y actualizar el RTC**.
 
 #### 2.2. Modo de Alarma
 
-La alarma se configura y almacena en memoria persistente (NVS/EEPROM). La lógica de comparación es continua:
+La lógica de comparación para la activación de la alarma es:
 
 $$\text{IF } (H_{actual} = H_{alarma}) \land (M_{actual} = M_{alarma}) \text{ THEN ACTIVATE BUZZER}$$
 
-La coincidencia activa el \textbf{Buzzer HW405} mediante una señal digital modulada hasta que se desactiva por interacción del usuario.
-
 #### 2.3. MODO Wi-Fi y Control Remoto
 
-El modo Wi-Fi es fundamental para la precisión y la accesibilidad:
-
-* **Conectividad:** Se utiliza el ESP32 para establecer una conexión a la red local.
-* **Servidor Web:** Se inicializa un \textbf{Servidor HTTP} accesible mediante la dirección IP local del ESP32.
-* **Funciones Remotas:** El servidor permite al usuario:
-    * Sincronizar o ajustar manualmente el RTC.
-    * Configurar la alarma de forma cómoda.
-    * Controlar los estados del cronómetro (\texttt{Start}/\texttt{Stop}/\texttt{Reset}).
+El modo Wi-Fi permite la sincronización NTP y actúa como un **Servidor HTTP** accesible en la red local . Esto proporciona una interfaz remota para la configuración y el control de las funciones del reloj.
 
 ## ⚙️ Implementación del Display (MAX7219)
 
-El control del display se realiza utilizando la librería **`LedControl.h`** (o su equivalente en el framework ESP-IDF).
+El control del display se realiza utilizando una librería adecuada para el **MAX7219** (como `LedControl.h`).
 
-* **Comunicación:** El ESP32 se comunica con el MAX7219 a través de la interfaz serial de 3 pines (DIN, CLK, LOAD).
+* **Comunicación:** El ESP32 se comunica con el MAX7219 a través de la interfaz serial de 3 pines (\texttt{DIN}, \texttt{CLK}, \texttt{LOAD}).
 * **Lógica:** El código es responsable de tomar los valores de la hora y transformarlos en los comandos que el MAX7219 necesita para encender los segmentos o LEDs correspondientes.
 
 ```cpp
