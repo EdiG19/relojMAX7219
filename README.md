@@ -55,5 +55,6 @@ Se utiliza la librería `LedControl.h`, que permite controlar el MAX7219 con fun
 #include "LedControl.h"
 // Conexión Típica: (DIN, CLK, LOAD, Número de matrices)
 LedControl lc = LedControl(12, 11, 10, 1);
+```
 
 ![Imagen de Circuito](image.png)

@@ -1,5 +1,7 @@
 ## Estructura del Código: Archivos de Implementación (`src`)
 
+
+
 La carpeta `src` contiene la implementación funcional (lógica de programación) de cada uno de los gestores del sistema, asegurando que el microcontrolador ESP32 interactúe correctamente con los periféricos.
 
 | Archivo (`.cpp`) | Contenido Principal (Implementación) |
