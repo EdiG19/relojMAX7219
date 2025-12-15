@@ -9,7 +9,7 @@ El proyecto está diseñado de forma modular, facilitando su mantenimiento, expa
 
 ## Diagrama de Conexión
 
-![Diagrama de Conexión del Reloj](Anexos/CIRCUITO (1).png)
+![Diagrama de Conexión del Reloj](Anexos/CIRCUITO (1))
 
 El proyecto es un reloj digital multifuncional basado en el ESP32 que utiliza un módulo RTC (DS1302) para la hora y matrices MAX7219 para la visualización.
 
