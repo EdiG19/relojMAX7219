@@ -20,22 +20,23 @@ public:
 
     // --- Funciones para el Menú ---
     static void setTime(int alarmIndex, int hour, int minute);
+    static void setTone(int alarmIndex, int toneIndex); // <-- Nuevo
     static void toggle(int alarmIndex, bool enabled);
     static void setVolume(int volume);
-    static void selectRingtone(int toneIndex);
 
-    static void soundAlarm(); // <--- NUEVO: Para que otros módulos la activen
     // --- Control de Sonido ---
+    static void soundAlarm(); // Para módulos externos (Timer) - usa un tono genérico
     static void previewTone(int toneIndex);
     static void stop(); 
     static bool isSounding();
+
+private:
     static void playTone(int toneIndex);
     static void stopTone();
 
-private:
     // Variables internas
-    static bool isCurrentlySounding; // Bandera para saber si está sonando
-    static unsigned long alarmStartTime; // Para controlar la duración del sonido
+    static bool isCurrentlySounding;
+    static unsigned long alarmStartTime;
 };
 
 #endif

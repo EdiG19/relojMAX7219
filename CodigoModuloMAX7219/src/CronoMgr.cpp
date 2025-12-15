@@ -1,4 +1,5 @@
 #include "CronoMgr.h"
+#include "GlobalSettings.h" // Para saber la precisión
 
 // Inicialización de variables estáticas
 Ticker CronoMgr::ticker;
@@ -26,7 +27,7 @@ void CronoMgr::start() {
         
         // Actualizamos LCD una vez
         DisplayMgr::printLCD(0, "CRONOMETRO");
-        DisplayMgr::printLCD(1, "[->]Pausa [||]Rst");
+        DisplayMgr::printLCD(1, "OK:Pausa, DN:Rst");
     }
 }
 
@@ -34,7 +35,7 @@ void CronoMgr::pause() {
     if (state == RUNNING) {
         ticker.detach();
         state = PAUSED;
-        DisplayMgr::printLCD(1, "PAUSADO [->]Cont");
+        DisplayMgr::printLCD(1, "PAUSADO, OK:Cont");
     }
 }
 
@@ -42,8 +43,8 @@ void CronoMgr::reset() {
     ticker.detach();
     state = STOPPED;
     centiseconds = 0;
-    dirty = true; // Forzar repintado a 00:00:00
-    DisplayMgr::printLCD(1, "STOP [->]Iniciar");
+    dirty = true; // Forzar repintado a 0
+    DisplayMgr::printLCD(1, "STOP, OK:Iniciar");
 }
 
 CronoState CronoMgr::getState() {
@@ -51,15 +52,23 @@ CronoState CronoMgr::getState() {
 }
 
 String CronoMgr::getFormattedTime() {
-    // Matemáticas para MM:SS:CS
-    unsigned long total = centiseconds;
-    int cs = total % 100;
-    unsigned long s_total = total / 100;
+    unsigned long total_cs = centiseconds;
+    unsigned long s_total = total_cs / 100;
+    
+    int cs = total_cs % 100;
     int s = s_total % 60;
     int m = s_total / 60;
     
-    char buffer[10];
-    sprintf(buffer, "%02d:%02d:%02d", m, s, cs);
+    char buffer[12]; // Un poco más grande por si acaso
+
+    if (GlobalSettings::cronoPrecision == PRECISION_CENTIS) {
+        sprintf(buffer, "%02d:%02d:%02d", m, s, cs);
+    } else { // PRECISION_SECONDS
+        // Formato MM.SS.
+        // La matriz de 8x8 no puede mostrar bien los dos puntos y que se vea claro
+        // Usamos un punto para separar y dejamos espacio.
+        sprintf(buffer, " %02d.%02d", m, s);
+    }
     return String(buffer);
 }
 

@@ -3,90 +3,81 @@
 
 // Definiciones de PWM para el ESP32
 #define LEDC_CHANNEL 0
-#define LEDC_RESOLUTION 8 // 8 bits de resolución (0-255)
-#define LEDC_BASE_FREQ 1000 // 1000 Hz
+#define LEDC_RESOLUTION 8
+#define LEDC_BASE_FREQ 1000
 
 bool AlarmMgr::isCurrentlySounding = false;
 unsigned long AlarmMgr::alarmStartTime = 0;
+
+void AlarmMgr::init() {
+    ledcSetup(LEDC_CHANNEL, LEDC_BASE_FREQ, LEDC_RESOLUTION);
+    ledcAttachPin(PIN_BUZZER, LEDC_CHANNEL);
+    stopTone();
+}
 
 bool AlarmMgr::isSounding() {
     return isCurrentlySounding;
 }
 
-void AlarmMgr::init() {
-    // Configura el canal PWM para el Buzzer
-    ledcSetup(LEDC_CHANNEL, LEDC_BASE_FREQ, LEDC_RESOLUTION);
-    ledcAttachPin(PIN_BUZZER, LEDC_CHANNEL);
-    
-    // Lo apagamos inicialmente
-    stopTone();
-}
-
 void AlarmMgr::playTone(int toneIndex) {
-    if (isCurrentlySounding) return; // Si ya está sonando, no hacemos nada más
+    if (isCurrentlySounding) return;
 
-    // 1. Obtener frecuencia basada en el índice
-    int freq = TONE_FREQ_1;
-    if (toneIndex == 1) freq = TONE_FREQ_2;
-    else if (toneIndex == 2) freq = TONE_FREQ_3;
+    int freq = 440; // Tono por defecto (La)
+    if (toneIndex == 1) freq = 523; // Do
+    else if (toneIndex == 2) freq = 659; // Mi
+    // Se podrían añadir más tonos aquí
 
-    // 2. Obtener Volumen (GlobalSettings::alarmVolume está en 0-10, lo mapeamos a 0-50)
     int dutyCycle = map(GlobalSettings::alarmVolume, 0, 10, 0, 50);
     
-    // 3. Reproducir (ledcWriteTone ajusta la frecuencia automáticamente)
     ledcWriteTone(LEDC_CHANNEL, freq);
     ledcWrite(LEDC_CHANNEL, dutyCycle);
     
     isCurrentlySounding = true;
-    alarmStartTime = millis(); // Guardamos cuándo empezó a sonar
+    alarmStartTime = millis();
 }
 
 void AlarmMgr::stopTone() {
-    ledcWrite(LEDC_CHANNEL, 0); // Duty Cycle a cero (silencio)
+    ledcWrite(LEDC_CHANNEL, 0);
     isCurrentlySounding = false;
 }
 
-// Lógica principal: Verifica si debe sonar alguna alarma O si debe detenerse
 void AlarmMgr::update(int currentHour, int currentMinute, int currentSecond) {
-    // Si la alarma está sonando, verificar si debe detenerse después de 5 segundos
-    // Esta lógica ahora es independiente de cómo se activó la alarma
     if (isCurrentlySounding) {
-        if (millis() - alarmStartTime >= 5000) {
+        if (millis() - alarmStartTime >= 5000) { // Detener después de 5s
             stopTone();
         }
-        return; // No hacer nada más si la alarma está activa
+        return;
     }
     
+    // Para no sobrecargar, solo chequear al inicio de un minuto
     if (currentSecond != 0) return;
 
-    // Recorremos las 3 alarmas
     for (int i = 0; i < 3; i++) {
-        if (GlobalSettings::alarms[i].enabled) {
+        if (GlobalSettings::alarms[i].enabled &&
+            GlobalSettings::alarms[i].hour == currentHour && 
+            GlobalSettings::alarms[i].minute == currentMinute) {
             
-            // Si coincide la hora y el minuto
-            if (GlobalSettings::alarms[i].hour == currentHour && 
-                GlobalSettings::alarms[i].minute == currentMinute) {
-                soundAlarm(); // Usamos la nueva función centralizada
-                
-                // Si es la alarma 0 (la de prueba de 10s), la desactivamos para que no se repita
-                if (i == 0) {
-                    GlobalSettings::alarms[i].enabled = false; 
-                }
-                return;
-            }
+            playTone(GlobalSettings::alarms[i].tone); // <-- USA EL TONO DE LA ALARMA
+            return; // Salir para no activar múltiples alarmas a la vez
         }
     }
 }
 
-// Función para ser llamada desde cualquier módulo (ej. TimerMgr)
+// Función para módulos externos (Timer), usa un tono genérico (0)
 void AlarmMgr::soundAlarm() {
-    playTone(GlobalSettings::alarmToneIndex);
+    playTone(0);
 }
 
 void AlarmMgr::setTime(int alarmIndex, int hour, int minute) {
     if (alarmIndex >= 0 && alarmIndex < 3) {
         GlobalSettings::alarms[alarmIndex].hour = hour;
         GlobalSettings::alarms[alarmIndex].minute = minute;
+    }
+}
+
+void AlarmMgr::setTone(int alarmIndex, int toneIndex) {
+    if (alarmIndex >= 0 && alarmIndex < 3) {
+        GlobalSettings::alarms[alarmIndex].tone = constrain(toneIndex, 0, 2);
     }
 }
 
@@ -97,18 +88,12 @@ void AlarmMgr::toggle(int alarmIndex, bool enabled) {
 }
 
 void AlarmMgr::setVolume(int volume) {
-    // Clamp/constrain the value between 0 and 10
     GlobalSettings::alarmVolume = constrain(volume, 0, 10);
-}
-
-void AlarmMgr::selectRingtone(int toneIndex) {
-    // Clamp/constrain the value between 0 and 2
-    GlobalSettings::alarmToneIndex = constrain(toneIndex, 0, 2);
 }
 
 void AlarmMgr::previewTone(int toneIndex) {
     playTone(toneIndex);
-    delay(500); // Toca el tono por medio segundo
+    delay(500);
     stopTone();
 }
 

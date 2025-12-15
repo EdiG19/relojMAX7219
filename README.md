@@ -1,11 +1,11 @@
 
 ![Diagrama de Conexión del Reloj](Anexos/CIRCUITO.png)
 
-# ⌚ Reloj Digital Multifunción MAX7219 con ESP32 y Wi-Fi
+# Reloj Digital Multifunción MAX7219 con ESP32 y Wi-Fi
 
 Este repositorio alberga el firmware para un proyecto de reloj digital avanzado y multifuncional, diseñado para ser ejecutado en la placa de desarrollo **ESP32 DevKit V1**. El proyecto supera la función básica de un reloj al integrar modos de operación avanzados, conectividad inalámbrica y una interfaz de usuario completa. La arquitectura del software está diseñada para ser modular y escalable.
 
-## 🚀 Características Principales del Proyecto
+## Características Principales del Proyecto
 
 | Característica | Descripción | Componentes Relevantes |
 | :--- | :--- | :--- |
