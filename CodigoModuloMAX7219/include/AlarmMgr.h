@@ -24,6 +24,7 @@ public:
     static void setVolume(int volume);
     static void selectRingtone(int toneIndex);
 
+    static void soundAlarm(); // <--- NUEVO: Para que otros módulos la activen
     // --- Control de Sonido ---
     static void previewTone(int toneIndex);
     static void stop(); 

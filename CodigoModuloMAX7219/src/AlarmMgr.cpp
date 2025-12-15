@@ -49,14 +49,14 @@ void AlarmMgr::stopTone() {
 // Lógica principal: Verifica si debe sonar alguna alarma O si debe detenerse
 void AlarmMgr::update(int currentHour, int currentMinute, int currentSecond) {
     // Si la alarma está sonando, verificar si debe detenerse después de 5 segundos
+    // Esta lógica ahora es independiente de cómo se activó la alarma
     if (isCurrentlySounding) {
         if (millis() - alarmStartTime >= 5000) {
-            stop();
+            stopTone();
         }
         return; // No hacer nada más si la alarma está activa
     }
     
-    // La alarma solo suena si el segundo es 00
     if (currentSecond != 0) return;
 
     // Recorremos las 3 alarmas
@@ -66,8 +66,7 @@ void AlarmMgr::update(int currentHour, int currentMinute, int currentSecond) {
             // Si coincide la hora y el minuto
             if (GlobalSettings::alarms[i].hour == currentHour && 
                 GlobalSettings::alarms[i].minute == currentMinute) {
-                
-                playTone(GlobalSettings::alarmToneIndex); // SUENA LA ALARMA
+                soundAlarm(); // Usamos la nueva función centralizada
                 
                 // Si es la alarma 0 (la de prueba de 10s), la desactivamos para que no se repita
                 if (i == 0) {
@@ -77,6 +76,11 @@ void AlarmMgr::update(int currentHour, int currentMinute, int currentSecond) {
             }
         }
     }
+}
+
+// Función para ser llamada desde cualquier módulo (ej. TimerMgr)
+void AlarmMgr::soundAlarm() {
+    playTone(GlobalSettings::alarmToneIndex);
 }
 
 void AlarmMgr::setTime(int alarmIndex, int hour, int minute) {

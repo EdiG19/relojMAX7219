@@ -15,6 +15,17 @@ enum BrightnessMode{
     BRIGHTNESS_AUTO,
     BRIGHTNESS_NIGHT
 };
+
+// --- ESTADOS GLOBALES DE LA APLICACIÓN ---
+enum AppState {
+    STATE_CLOCK,
+    STATE_MENU_MAIN,
+    STATE_CRONO,
+    STATE_TIMER,
+    STATE_MENU_ALARM,
+    STATE_MENU_CONFIG
+    // ... aquí se pueden añadir más estados para sub-menús
+};
 struct AlarmConfig{
     int hour;
     int minute;
@@ -37,6 +48,9 @@ public:
     static BrightnessMode brightnessMode;
     static int  matrixBrightness; 
 
+    // --- Estado de la Aplicación ---
+    static AppState appState;
+
     // Inicializa valores por defecto
     static void init() {
         use24hFormat = true;
@@ -56,6 +70,8 @@ public:
 
         brightnessMode = BRIGHTNESS_AUTO;
         matrixBrightness = 1;
+
+        appState = STATE_CLOCK; // La aplicación arranca mostrando el reloj
     }
 };
 

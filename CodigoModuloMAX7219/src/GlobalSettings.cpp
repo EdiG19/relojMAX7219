@@ -18,3 +18,6 @@ bool GlobalSettings::wifiEnabled;
 // --- Hardware y Brillo ---
 BrightnessMode GlobalSettings::brightnessMode;
 int  GlobalSettings::matrixBrightness;
+
+// --- Estado de la App ---
+AppState GlobalSettings::appState;
