@@ -1,0 +1,107 @@
+VV
+#include <MD_Parola.h>
+#include <MD_MAX72xx.h>
+#include <SPI.h> // Necesaria para la comunicación SPI
+#include <ThreeWire.h> // Para el protocolo del DS1302
+#include <RtcDS1302.h> // Librería del DS1302
+
+// ------------------------------------------------------------------
+// CONFIGURACIÓN DE LA MATRIZ MAX7219 (Pines de Depuración)
+// ------------------------------------------------------------------
+#define HARDWARE_TYPE MD_MAX72XX::GENERIC_HW // Corrige el orden de la cadena
+#define MAX_DEVICES   4 // Tienes 4 módulos encadenados
+#define CLK_PIN       14 // GPIO 14 (SCK)
+#define DATA_PIN      13 // GPIO 13 (MOSI)
+#define CS_PIN        15 // GPIO 15 (CS/LOAD)
+
+// Crea el objeto MD_Parola
+MD_Parola display = MD_Parola(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
+
+// Buffer para almacenar el tiempo formateado (HH:MM:SS\0)
+char szTime[9]; 
+
+// ------------------------------------------------------------------
+// CONFIGURACIÓN DEL MÓDULO DS1302 RTC
+// ------------------------------------------------------------------
+
+// Pines de conexión del DS1302 (RST, CLK, DAT)
+// Estos deben coincidir con la tabla de cableado anterior.
+const int kCePin = 4;   // RST/CE (Chip Enable)
+const int kIOPin = 17;  // DAT (Data I/O)
+const int kSclkPin = 16; // CLK (Serial Clock)
+
+// Crea los objetos para la comunicación
+ThreeWire myWire(kIOPin, kSclkPin, kCePin); 
+RtcDS1302<ThreeWire> Rtc(myWire);
+
+// Variable para almacenar el último segundo
+uint8_t lastSecond = 0;
+
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Iniciando Reloj RTC con MAX7219 en ESP32...");
+  
+  // 1. Inicialización del MAX7219
+  display.begin();
+  display.setIntensity(5); 
+  display.displayClear();
+
+  // 2. Inicialización del DS1302
+  Rtc.Begin();
+
+  // ** Comprobación y Configuración de la Hora **
+  // Si la hora es inválida o no está corriendo, la ajustamos
+  if (!Rtc.IsDateTimeValid()) {
+    Serial.println("RTC perdido la confianza en la hora. Ajustando ahora...");
+    
+    // Obtiene la hora en que se compiló el código
+    RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
+    
+    // Establece la hora del RTC al momento de la compilación
+    Rtc.SetDateTime(compiled);
+  }
+
+  // Habilita la lectura/escritura si estaba protegido
+  if (Rtc.GetIsWriteProtected()) {
+    Rtc.SetIsWriteProtected(false);
+  }
+
+  // Asegura que el reloj esté corriendo
+  if (!Rtc.GetIsRunning()) {
+    Rtc.SetIsRunning(true);
+  }
+
+  Serial.println("Inicialización completa. Hora mostrándose...");
+}
+
+
+void loop() {
+  // 1. Leer la hora actual del RTC
+  RtcDateTime now = Rtc.GetDateTime();
+  
+  // 2. Comprobar si ha pasado un segundo completo
+  if (now.Second() != lastSecond) {
+    lastSecond = now.Second();
+
+    // 3. Formatear la hora como HH:MM:SS para el display (ej. 17:30:05)
+    // Se usa "%02d" para asegurar dos dígitos (ej. 05 en lugar de 5)
+    snprintf(szTime, sizeof(szTime), "%02d:%02d:%02d", 
+             now.Hour(), 
+             now.Minute(), 
+             now.Second());
+    
+    // 4. Mostrar la hora en el Monitor Serial para depuración
+    Serial.print("Hora RTC: ");
+    Serial.println(szTime);
+
+    // 5. Mostrar la hora en la matriz MAX7219
+    display.setTextBuffer(szTime);
+  }
+
+  // 6. Actualizar el display (necesario para MD_Parola)
+  display.displayAnimate();
+  
+  // Pequeño delay de 5ms para no saturar el loop
+  delay(5);
+}
